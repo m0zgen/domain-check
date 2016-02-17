@@ -1,5 +1,6 @@
 #/bin/bash
 # Author: Yevgeniy Goncharov aka xck, http://sys-admin.kz
+# Forum thread http://forum.sys-admin.kz/index.php?topic=4458.0
 
 # Variables
 # --------------------------------------------------
@@ -12,7 +13,11 @@ FLAG=$2
 # --------------------------------------------------
 function checkName(){
 
-	check=`curl -s $_hosterLink$_domain | grep text-danger | sed 's/<\/\?[^>]\+>//g' | sed -r 's/&nbsp;/ /g' | awk '{$2=$2};1'` &>/dev/null
+	status=$(curl -s --head -w %{http_code} $_hosterLink -o /dev/null)
+
+	if [[ $status -eq 200 ]]; then
+		# Get expiration status
+		check=`curl -s $_hosterLink$_domain | grep text-danger | sed 's/<\/\?[^>]\+>//g' | sed -r 's/&nbsp;/ /g' | awk '{$2=$2};1'` &>/dev/null
 
 	# Check empty string -z or not -n
 	if [[ -z $check ]]; then
@@ -23,16 +28,21 @@ function checkName(){
 		if [[ -z $FLAG ]]; then
 			echo $check
 		else
+			# Get full parse data
 			curl -s $_hosterLink$_domain | sed -n '/<table/,/<\/table>/p' | sed 's/<\/\?[^>]\+>//g' | sed -r 's/&nbsp;/ /g; s/ \+//g; /^\s*$/d; ' | awk '{$2=$2};1' > t.log
 
 			while read -r line; do
-		    	echo $line
+				echo $line
 			done < t.log
 
 		fi
 	fi
-}
+else
+	echo "Сайт хостера $_hosterLink недоступен!"
 
+fi
+
+}
 
 # Check run arguments
 # ---------------------------------------------------\

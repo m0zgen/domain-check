@@ -4,6 +4,11 @@
 
 # Variables
 # --------------------------------------------------
+PATH=$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
+# Determine script location
+SCRIPT_PATH=$(cd `dirname "${BASH_SOURCE[0]}"` && pwd)
+list=`cat $SCRIPT_PATH/list.txt`
+
 _hosterLink="https://www.ps.kz/domains/whois?domain="
 _domain=$1
 FLAG=$2
@@ -17,7 +22,7 @@ function checkName(){
 
 	if [[ $status -eq 200 ]]; then
 		# Get expiration status
-		check=`curl -s $_hosterLink$_domain | grep text-danger | sed 's/<\/\?[^>]\+>//g' | sed -r 's/&nbsp;/ /g' | awk '{$2=$2};1'` &>/dev/null
+		check=`curl -s $_hosterLink$1 | grep text-danger | sed 's/<\/\?[^>]\+>//g' | sed -r 's/&nbsp;/ /g' | awk '{$2=$2};1'` &>/dev/null
 
 	# Check empty string -z or not -n
 	if [[ -z $check ]]; then
@@ -29,7 +34,7 @@ function checkName(){
 			echo $check
 		else
 			# Get full parse data
-			curl -s $_hosterLink$_domain | sed -n '/<table/,/<\/table>/p' | sed 's/<\/\?[^>]\+>//g' | sed -r 's/&nbsp;/ /g; s/ \+//g; /^\s*$/d; ' | awk '{$2=$2};1' > t.log
+			curl -s $_hosterLink$1 | sed -n '/<table/,/<\/table>/p' | sed 's/<\/\?[^>]\+>//g' | sed -r 's/&nbsp;/ /g; s/ \+//g; /^\s*$/d; ' | awk '{$2=$2};1' > t.log
 
 			while read -r line; do
 				echo $line
@@ -52,7 +57,17 @@ if [ -z "$1" ] && [ -z "$2" ]; then
 	echo "Необходимо указать имя домена, пример: ./domain-kz-check.sh domain.local"
 	exit 1
 else
-	checkName
+	if [[ $_domain == *".txt"* ]]; then
+		
+
+		for i in $list; do
+			# echo $i".kz"
+			checkName $i
+		done
+
+	else
+		checkName $_domain
+	fi
 fi
 
 
